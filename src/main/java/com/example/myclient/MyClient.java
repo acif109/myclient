@@ -11,12 +11,15 @@ import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 public class MyClient implements ClientModInitializer {
-    private static boolean hudEnabled = true;
-    private static KeyBinding toggleKey;
+    // Moduly (wlaczane w menu pod Prawym Shiftem)
+    public static boolean fpsEnabled = true;
+    public static boolean coordsEnabled = true;
+
+    private static KeyBinding menuKey;
 
     @Override
     public void onInitializeClient() {
-        toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        menuKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.myclient.toggle_hud",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_RIGHT_SHIFT,
@@ -24,20 +27,28 @@ public class MyClient implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (toggleKey.wasPressed()) {
-                hudEnabled = !hudEnabled;
+            while (menuKey.wasPressed()) {
+                if (client.currentScreen == null) {
+                    client.setScreen(new ModuleScreen());
+                }
             }
         });
 
         HudElementRegistry.addLast(Identifier.of("myclient", "info_hud"), (ctx, tickCounter) -> {
             MinecraftClient mc = MinecraftClient.getInstance();
-            if (!hudEnabled || mc.player == null || mc.options.hudHidden) return;
+            if (mc.player == null || mc.options.hudHidden) return;
 
-            ctx.drawTextWithShadow(mc.textRenderer, "FPS: " + mc.getCurrentFps(), 5, 5, 0xFFFFFFFF);
-            ctx.drawTextWithShadow(mc.textRenderer,
-                    String.format("XYZ: %.1f / %.1f / %.1f",
-                            mc.player.getX(), mc.player.getY(), mc.player.getZ()),
-                    5, 17, 0xFFFFFFFF);
+            int y = 5;
+            if (fpsEnabled) {
+                ctx.drawTextWithShadow(mc.textRenderer, "FPS: " + mc.getCurrentFps(), 5, y, 0xFFFFFFFF);
+                y += 12;
+            }
+            if (coordsEnabled) {
+                ctx.drawTextWithShadow(mc.textRenderer,
+                        String.format("XYZ: %.1f / %.1f / %.1f",
+                                mc.player.getX(), mc.player.getY(), mc.player.getZ()),
+                        5, y, 0xFFFFFFFF);
+            }
         });
     }
 }
