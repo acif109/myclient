@@ -7,47 +7,49 @@ import net.minecraft.text.Text;
 import org.lwjgl.glfw.GLFW;
 
 public class ModuleScreen extends Screen {
-    private ButtonWidget fpsButton;
-    private ButtonWidget coordsButton;
+    private static final int BTN_W = 140;
+    private static final int BTN_H = 20;
+    private static final int GAP = 6;
 
     public ModuleScreen() {
-        super(Text.literal("MyClient"));
+        super(Text.literal("Aurix Client"));
     }
 
-    private static Text label(String name, boolean on) {
-        return Text.literal(name + ": " + (on ? "ON" : "OFF"));
+    private static Text label(Module m) {
+        return Text.literal(m.name + ": " + (m.enabled ? "ON" : "OFF"));
     }
 
     @Override
     protected void init() {
-        int w = 150;
-        int h = 20;
-        int x = this.width / 2 - w / 2;
-        int y = this.height / 2 - 30;
+        int rows = (Modules.ALL.size() + 1) / 2;
+        int totalW = BTN_W * 2 + GAP;
+        int startX = this.width / 2 - totalW / 2;
+        int startY = this.height / 2 - (rows * (BTN_H + GAP)) / 2;
 
-        fpsButton = ButtonWidget.builder(label("FPS", MyClient.fpsEnabled), b -> {
-            MyClient.fpsEnabled = !MyClient.fpsEnabled;
-            b.setMessage(label("FPS", MyClient.fpsEnabled));
-        }).dimensions(x, y, w, h).build();
+        for (int i = 0; i < Modules.ALL.size(); i++) {
+            final Module m = Modules.ALL.get(i);
+            int col = i % 2;
+            int row = i / 2;
+            int x = startX + col * (BTN_W + GAP);
+            int y = startY + row * (BTN_H + GAP);
+            this.addDrawableChild(ButtonWidget.builder(label(m), b -> {
+                m.enabled = !m.enabled;
+                b.setMessage(label(m));
+            }).dimensions(x, y, BTN_W, BTN_H).build());
+        }
 
-        coordsButton = ButtonWidget.builder(label("Koordynaty", MyClient.coordsEnabled), b -> {
-            MyClient.coordsEnabled = !MyClient.coordsEnabled;
-            b.setMessage(label("Koordynaty", MyClient.coordsEnabled));
-        }).dimensions(x, y + 26, w, h).build();
-
-        ButtonWidget close = ButtonWidget.builder(Text.literal("Zamknij"), b -> this.close())
-                .dimensions(x, y + 62, w, h).build();
-
-        this.addDrawableChild(fpsButton);
-        this.addDrawableChild(coordsButton);
-        this.addDrawableChild(close);
+        int closeY = startY + rows * (BTN_H + GAP) + 6;
+        this.addDrawableChild(ButtonWidget.builder(Text.literal("Zamknij"), b -> this.close())
+                .dimensions(this.width / 2 - 70, closeY, 140, BTN_H).build());
     }
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         super.render(ctx, mouseX, mouseY, delta);
+        int rows = (Modules.ALL.size() + 1) / 2;
+        int startY = this.height / 2 - (rows * (BTN_H + GAP)) / 2;
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("MyClient - moduly"), this.width / 2, this.height / 2 - 50, 0xFFFFFFFF);
+                Text.literal("Aurix Client - moduly"), this.width / 2, startY - 18, 0xFFFFFFFF);
     }
 
     @Override

@@ -1,4 +1,5 @@
 {
-  "key.myclient.toggle_hud": "Open MyClient menu",
-  "category.myclient": "MyClient"
+  "key.myclient.toggle_hud": "Open Aurix menu",
+  "key.myclient.zoom": "Zoom",
+  "category.myclient": "Aurix Client"
 }

@@ -2,10 +2,11 @@
   "schemaVersion": 1,
   "id": "myclient",
   "version": "${version}",
-  "name": "MyClient",
-  "description": "Moj wlasny klient: HUD z FPS i koordynatami.",
+  "name": "Aurix Client",
+  "description": "Aurix Client - lekki klient z modulami HUD.",
   "authors": ["Ty"],
   "license": "MIT",
+  "icon": "assets/myclient/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": ["com.example.myclient.MyClient"]
