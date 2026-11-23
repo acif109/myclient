@@ -10,8 +10,8 @@ public final class Modules {
     public static final Module DIRECTION = new Module("Kierunek", false);
     public static final Module CLOCK = new Module("Zegar", false);
     public static final Module ARMOR = new Module("Pancerz", false);
-    public static final Module KEYSTROKES = new Module("Klawisze WASD", false);
-    public static final Module ZOOM = new Module("Zoom (klawisz C)", true);
+    public static final Module KEYSTROKES = new Module("Klawisze", false);
+    public static final Module ZOOM = new Module("Zoom (C)", true);
 
     public static final List<Module> ALL = List.of(
             FPS, COORDS, CPS, PING, DIRECTION, CLOCK, ARMOR, KEYSTROKES, ZOOM

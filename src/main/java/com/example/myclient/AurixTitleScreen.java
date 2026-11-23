@@ -5,79 +5,173 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.option.OptionsScreen;
 import net.minecraft.client.gui.screen.world.SelectWorldScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AurixTitleScreen extends Screen {
     private static final int CYAN = 0xFF3CE6FF;
     private static final int WHITE = 0xFFFFFFFF;
-    private static final int LOGO_H = 56;
-    private static final int STROKE = 10;
+    private static final int GRAY = 0xFF8A8FB0;
+
+    private static final int LOGO_H = 52;
+    private static final int STROKE = 9;
+    private static final int BTN_W = 200;
+    private static final int BTN_H = 20;
+    private static final int BTN_GAP = 4;
+
+    private static class Entry {
+        final String label;
+        final Runnable action;
+
+        Entry(String label, Runnable action) {
+            this.label = label;
+            this.action = action;
+        }
+    }
+
+    private final List<Entry> entries = new ArrayList<>();
+    private long openedAt;
 
     public AurixTitleScreen() {
         super(Text.literal("Aurix Client"));
     }
 
-    private int logoTop() {
-        return Math.max(8, this.height / 4 - 30);
-    }
-
     @Override
     protected void init() {
-        int w = 200;
-        int h = 20;
-        int x = this.width / 2 - w / 2;
-        int y = logoTop() + LOGO_H + 30;
+        openedAt = System.currentTimeMillis();
+        entries.clear();
+        entries.add(new Entry("Gra jednoosobowa", () -> this.client.setScreen(new SelectWorldScreen(this))));
+        entries.add(new Entry("Gra wieloosobowa", () -> this.client.setScreen(new MultiplayerScreen(this))));
+        entries.add(new Entry("Moduly Aurix", () -> this.client.setScreen(new ModuleScreen(this))));
+        entries.add(new Entry("Opcje", () -> this.client.setScreen(new OptionsScreen(this, this.client.options))));
+        entries.add(new Entry("Wyjdz z gry", () -> this.client.scheduleStop()));
+    }
 
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Gra jednoosobowa"),
-                b -> this.client.setScreen(new SelectWorldScreen(this)))
-                .dimensions(x, y, w, h).build());
+    // ---------- uklad ----------
 
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Gra wieloosobowa"),
-                b -> this.client.setScreen(new MultiplayerScreen(this)))
-                .dimensions(x, y + 24, w, h).build());
+    private int blockHeight() {
+        return 8 + LOGO_H + 30 + entries.size() * (BTN_H + BTN_GAP);
+    }
 
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Opcje"),
-                b -> this.client.setScreen(new OptionsScreen(this, this.client.options)))
-                .dimensions(x, y + 48, w, h).build());
+    private int logoTop() {
+        return Math.max(12, (this.height - blockHeight()) / 2 + 8);
+    }
 
-        this.addDrawableChild(ButtonWidget.builder(Text.literal("Wyjdz z gry"),
-                b -> this.client.scheduleStop())
-                .dimensions(x, y + 72, w, h).build());
+    private int buttonsTop() {
+        return logoTop() + LOGO_H + 30;
+    }
+
+    private int buttonY(int i) {
+        return buttonsTop() + i * (BTN_H + BTN_GAP);
+    }
+
+    private int buttonX() {
+        return this.width / 2 - BTN_W / 2;
+    }
+
+    private static boolean inside(double mx, double my, int x, int y, int w, int h) {
+        return mx >= x && mx < x + w && my >= y && my < y + h;
+    }
+
+    // ---------- rysowanie ----------
+
+    private static void drawA(DrawContext ctx, int cx, int top, int h, int stroke, int color, boolean bar) {
+        for (int r = 0; r < h; r++) {
+            int off = (int) (r * 0.55);
+            ctx.fill(cx - off, top + r, cx - off + stroke, top + r + 1, color);
+            ctx.fill(cx + off - stroke, top + r, cx + off, top + r + 1, color);
+        }
+        if (bar) {
+            int from = (int) (h * 0.68);
+            int to = (int) (h * 0.78);
+            for (int r = from; r < to; r++) {
+                int off = (int) (r * 0.55);
+                ctx.fill(cx - off + stroke, top + r, cx + off - stroke, top + r + 1, WHITE);
+            }
+            ctx.fill(cx - 3, top - 8, cx + 3, top - 2, WHITE);
+        }
     }
 
     @Override
     public void renderBackground(DrawContext ctx, int mouseX, int mouseY, float delta) {
-        // tlo: gradient granat -> fiolet
-        ctx.fillGradient(0, 0, this.width, this.height, 0xFF0E1230, 0xFF3A1E7A);
+        ctx.fillGradient(0, 0, this.width, this.height, 0xFF0A0D26, 0xFF3A1E7A);
 
-        // delikatne linie dekoracyjne
-        ctx.fill(0, this.height - 30, this.width, this.height - 29, 0x553CE6FF);
-        ctx.fill(0, 30, this.width, 31, 0x553CE6FF);
-
-        // logo: litera A z prostokatow
-        int cx = this.width / 2;
-        int top = logoTop();
-        for (int r = 0; r < LOGO_H; r++) {
-            int off = (int) (r * 0.55);
-            ctx.fill(cx - off, top + r, cx - off + STROKE, top + r + 1, CYAN);
-            ctx.fill(cx + off - STROKE, top + r, cx + off, top + r + 1, CYAN);
+        // unoszace sie czasteczki
+        double t = (System.currentTimeMillis() % 3_600_000L) / 1000.0;
+        for (int i = 0; i < 45; i++) {
+            double speed = 5 + (i % 5) * 4;
+            int size = 1 + (i % 3);
+            int x = (i * 137 + 29) % Math.max(1, this.width);
+            int span = this.height + 20;
+            int y = this.height - (int) ((t * speed + i * 53) % span);
+            int alpha = 0x18 + (i % 4) * 0x10;
+            ctx.fill(x, y, x + size, y + size, (alpha << 24) | 0x3CE6FF);
         }
-        for (int r = 38; r < 44; r++) {
-            int off = (int) (r * 0.55);
-            ctx.fill(cx - off + STROKE, top + r, cx + off - STROKE, top + r + 1, WHITE);
-        }
-        ctx.fill(cx - 3, top - 8, cx + 3, top - 2, WHITE);
 
-        // nazwa
-        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("AURIX CLIENT"),
-                cx, top + LOGO_H + 10, WHITE);
+        // linie dekoracyjne
+        ctx.fill(0, this.height - 22, this.width, this.height - 21, 0x443CE6FF);
     }
 
     @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float delta) {
         super.render(ctx, mouseX, mouseY, delta);
-        ctx.drawTextWithShadow(this.textRenderer, "Aurix Client 1.0.0", 4, this.height - 12, 0xFFAAAAAA);
+
+        double t = System.currentTimeMillis() / 1000.0;
+        int cx = this.width / 2;
+        int top = logoTop();
+
+        // poswiata logo (pulsuje)
+        double pulse = 0.5 + 0.5 * Math.sin(t * 2.0);
+        int glowAlpha = (int) (26 + 34 * pulse);
+        drawA(ctx, cx - 2, top - 2, LOGO_H + 4, STROKE + 4, (glowAlpha << 24) | 0x3CE6FF, false);
+        drawA(ctx, cx, top, LOGO_H, STROKE, CYAN, true);
+
+        // nazwa
+        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("A U R I X"),
+                cx, top + LOGO_H + 6, WHITE);
+        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("C L I E N T"),
+                cx, top + LOGO_H + 17, CYAN);
+
+        // przyciski
+        int bx = buttonX();
+        for (int i = 0; i < entries.size(); i++) {
+            int by = buttonY(i);
+            boolean hover = inside(mouseX, mouseY, bx, by, BTN_W, BTN_H);
+            ctx.fill(bx, by, bx + BTN_W, by + BTN_H, hover ? 0xEE2A7C94 : 0xCC141836);
+            ctx.fill(bx, by, bx + 3, by + BTN_H, hover ? CYAN : 0xFF3A3F66);
+            ctx.fill(bx, by + BTN_H - 1, bx + BTN_W, by + BTN_H, hover ? 0x773CE6FF : 0x22FFFFFF);
+            ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal(entries.get(i).label),
+                    cx, by + 6, hover ? WHITE : 0xFFD6D9F0);
+        }
+
+        // stopka
+        ctx.drawTextWithShadow(this.textRenderer, "Aurix Client 1.0.0", 5, this.height - 14, GRAY);
+        String user = "Gracz: " + this.client.getSession().getUsername();
+        int uw = this.textRenderer.getWidth(user);
+        ctx.drawTextWithShadow(this.textRenderer, user, this.width - uw - 5, this.height - 14, GRAY);
+
+        // plynne wejscie (fade-in)
+        long elapsed = System.currentTimeMillis() - openedAt;
+        int fade = (int) Math.max(0, 255 - elapsed * 255 / 500);
+        if (fade > 0) {
+            ctx.fill(0, 0, this.width, this.height, fade << 24);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            int bx = buttonX();
+            for (int i = 0; i < entries.size(); i++) {
+                if (inside(mouseX, mouseY, bx, buttonY(i), BTN_W, BTN_H)) {
+                    entries.get(i).action.run();
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
