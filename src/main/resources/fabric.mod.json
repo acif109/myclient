@@ -4,17 +4,24 @@
   "version": "${version}",
   "name": "Aurix Client",
   "description": "Aurix Client - lekki klient z modulami HUD.",
-  "authors": ["Ty"],
+  "authors": [
+    "Ty"
+  ],
   "license": "MIT",
   "icon": "assets/myclient/icon.png",
   "environment": "client",
   "entrypoints": {
-    "client": ["com.example.myclient.MyClient"]
+    "client": [
+      "com.example.myclient.MyClient"
+    ]
   },
   "depends": {
     "fabricloader": ">=0.16.14",
     "minecraft": "~1.21.6",
     "java": ">=21",
     "fabric-api": "*"
-  }
+  },
+  "mixins": [
+    "myclient.mixins.json"
+  ]
 }

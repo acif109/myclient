@@ -4,10 +4,13 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.TitleScreen;
+import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
+import net.minecraft.client.gui.screen.world.SelectWorldScreen;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.client.option.KeyBinding;
@@ -46,6 +49,14 @@ public class MyClient implements ClientModInitializer {
     public void onInitializeClient() {
         Config.load();
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> Config.save());
+
+        // stylizacja ekranu wyboru swiata i listy serwerow
+        ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
+            if (screen instanceof SelectWorldScreen || screen instanceof MultiplayerScreen) {
+                ScreenEvents.afterRender(screen).register((scr, ctx, mouseX, mouseY, tickDelta) ->
+                        AurixOverlay.render(ctx, scr.width, scr.height));
+            }
+        });
 
         menuKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.myclient.toggle_hud",

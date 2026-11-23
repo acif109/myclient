@@ -32,6 +32,10 @@ public final class Config {
             if (value != null) {
                 m.enabled = Boolean.parseBoolean(value.trim());
             }
+            String fav = props.getProperty(key(m) + "_fav");
+            if (fav != null) {
+                m.favorite = Boolean.parseBoolean(fav.trim());
+            }
         }
     }
 
@@ -39,6 +43,7 @@ public final class Config {
         Properties props = new Properties();
         for (Module m : Modules.ALL) {
             props.setProperty(key(m), Boolean.toString(m.enabled));
+            props.setProperty(key(m) + "_fav", Boolean.toString(m.favorite));
         }
         try (Writer writer = Files.newBufferedWriter(FILE)) {
             props.store(writer, "Aurix Client - ustawienia modulow");
