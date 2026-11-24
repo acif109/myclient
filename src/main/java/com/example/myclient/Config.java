@@ -37,6 +37,12 @@ public final class Config {
             System.err.println("[Aurix] Nie udalo sie wczytac ustawien: " + e.getMessage());
             return;
         }
+        String savedCape = props.getProperty("cape", "none").trim();
+        Cosmetics.cape = Cosmetics.isValid(Cosmetics.CAPES, savedCape) ? savedCape : "none";
+        String savedBack = props.getProperty("backwings", "none").trim();
+        Cosmetics.backWings = Cosmetics.isValid(Cosmetics.BACK_WINGS, savedBack) ? savedBack : "none";
+        String savedWings = props.getProperty("wings", "none").trim();
+        Cosmetics.wings = Cosmetics.isValid(Cosmetics.WINGS, savedWings) ? savedWings : "none";
         Profile.accounts.clear();
         String savedAccounts = props.getProperty("accounts", "");
         for (String part : savedAccounts.split(",")) {
@@ -67,6 +73,9 @@ public final class Config {
     public static void save() {
         Properties props = new Properties();
         props.setProperty("config_version", "2");
+        props.setProperty("cape", Cosmetics.cape);
+        props.setProperty("wings", Cosmetics.wings);
+        props.setProperty("backwings", Cosmetics.backWings);
         props.setProperty("accounts", String.join(",", Profile.accounts));
         props.setProperty("active", Profile.active);
         for (Module m : Modules.ALL) {

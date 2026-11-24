@@ -143,6 +143,10 @@ public class ModuleScreen extends Screen {
         return areaT + (i / cols) * (CARD_H + GAP) - (int) scroll;
     }
 
+    private int cosmeticsButtonY() {
+        return hudButtonY() + 24;
+    }
+
     private int hudButtonY() {
         return sideItemY(CATS.length) + 4;
     }
@@ -227,6 +231,16 @@ public class ModuleScreen extends Screen {
                     selected ? CYAN : GRAY);
         }
 
+        // przycisk kosmetykow
+        int kx2 = panelX + 12;
+        int ky2 = cosmeticsButtonY();
+        int kw2 = SIDE_W - 22;
+        boolean kh = inside(mouseX, mouseY, kx2, ky2, kw2, 20);
+        rr(ctx, kx2, ky2, kw2, 20, 4, kh ? 0xCCB48CFF : 0x66B48CFF);
+        rr(ctx, kx2 + 1, ky2 + 1, kw2 - 2, 18, 3, kh ? 0xFF2A2250 : 0xFF14193A);
+        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("Kosmetyki"),
+                kx2 + kw2 / 2, ky2 + 6, WHITE);
+
         // przycisk edytora HUD
         int ex = panelX + 12;
         int ey = hudButtonY();
@@ -238,7 +252,7 @@ public class ModuleScreen extends Screen {
                 ex + ew / 2, ey + 6, WHITE);
 
         // gracz
-        if (panelH >= 270) {
+        if (panelH >= 300) {
             String name = Profile.displayName(this.client);
             int fy = panelY + panelH - 36;
             boolean nickHover = inside(mouseX, mouseY, panelX + 12, fy, SIDE_W - 22, 22);
@@ -358,9 +372,15 @@ public class ModuleScreen extends Screen {
         computeLayout();
 
         // blok gracza -> zmiana nicku
-        if (button == 0 && panelH >= 270
+        if (button == 0 && panelH >= 300
                 && inside(mouseX, mouseY, panelX + 12, panelY + panelH - 36, SIDE_W - 22, 22)) {
             this.client.setScreen(new AccountScreen(this));
+            return true;
+        }
+
+        // przycisk kosmetykow
+        if (button == 0 && inside(mouseX, mouseY, panelX + 12, cosmeticsButtonY(), SIDE_W - 22, 20)) {
+            this.client.setScreen(new CosmeticsScreen(this));
             return true;
         }
 
