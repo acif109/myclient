@@ -83,11 +83,11 @@ public class HudEditorScreen extends Screen {
         // naglowek i podpowiedzi
         ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("EDYTOR HUD"), this.width / 2, 10, CYAN);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("Przeciagnij modul myszka, aby zmienic jego polozenie  |  Esc - zapisz i zamknij"),
+                Text.literal("Przeciągnij moduł myszką, aby zmienić jego położenie  |  Esc – zapisz i zamknij"),
                 this.width / 2, 24, WHITE);
         if (!any) {
             ctx.drawCenteredTextWithShadow(this.textRenderer,
-                    Text.literal("Brak wlaczonych modulow - wlacz je w menu Aurix (Prawy Shift)"),
+                    Text.literal("Brak włączonych modułów – włącz je w menu Aurix (Prawy Shift)"),
                     this.width / 2, this.height / 2, GRAY);
         }
 

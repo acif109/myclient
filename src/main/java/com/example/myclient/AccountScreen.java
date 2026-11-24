@@ -114,9 +114,9 @@ public class AccountScreen extends Screen {
 
         ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("KONTA OFFLINE"), this.width / 2, y + 12, CYAN);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("Konta offline zmieniaja nick w grze."), this.width / 2, y + 27, GRAY);
+                Text.literal("Konta offline zmieniają nick w grze."), this.width / 2, y + 27, GRAY);
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("Dzialaja na serwerach offline-mode i w LAN."), this.width / 2, y + 38, GRAY);
+                Text.literal("Działają na serwerach offline-mode i w LAN."), this.width / 2, y + 38, GRAY);
 
         // lista kont
         List<String> rows = rows();
@@ -166,14 +166,14 @@ public class AccountScreen extends Screen {
         Gfx.rr(ctx, lx + 1, iy + 1, fw - 2, 18, 4, 0xFF10132B);
         boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
         if (input.isEmpty()) {
-            ctx.drawTextWithShadow(this.textRenderer, "Nowy nick (3-16 znakow)", lx + 6, iy + 6, GRAY);
+            ctx.drawTextWithShadow(this.textRenderer, "Nowy nick (3-16 znaków)", lx + 6, iy + 6, GRAY);
         } else {
             ctx.drawTextWithShadow(this.textRenderer, input + (blink ? "_" : ""), lx + 6, iy + 6, WHITE);
         }
         drawButton(ctx, "Dodaj", lx + fw + 6, iy, 70, mouseX, mouseY, Profile.isValidName(input.trim()));
 
         ctx.drawCenteredTextWithShadow(this.textRenderer,
-                Text.literal("Serwery online-mode wymagaja Twojego konta."), this.width / 2, iy + 28, GRAY);
+                Text.literal("Serwery online-mode wymagają Twojego konta."), this.width / 2, iy + 28, GRAY);
 
         drawButton(ctx, "Zamknij", x + PANEL_W / 2 - 40, y + PANEL_H - 30, 80, mouseX, mouseY, false);
     }

@@ -6,6 +6,13 @@ public class Module {
     public boolean enabled;
     public boolean favorite = false;
     public float anim = -1f; // animacja przelacznika w GUI
+    public float hover = 0f; // animacja podswietlenia karty
+    public String desc = "";
+
+    public Module desc(String d) {
+        this.desc = d;
+        return this;
+    }
 
     // pozycja na ekranie (HUD)
     public final boolean hud;

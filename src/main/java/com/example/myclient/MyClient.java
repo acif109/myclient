@@ -146,10 +146,10 @@ public class MyClient implements ClientModInitializer {
 
     private static String direction(MinecraftClient mc) {
         return switch (mc.player.getHorizontalFacing()) {
-            case NORTH -> "N (polnoc, -Z)";
-            case SOUTH -> "S (poludnie, +Z)";
-            case EAST -> "E (wschod, +X)";
-            case WEST -> "W (zachod, -X)";
+            case NORTH -> "N (północ, -Z)";
+            case SOUTH -> "S (południe, +Z)";
+            case EAST -> "E (wschód, +X)";
+            case WEST -> "W (zachód, -X)";
             default -> "?";
         };
     }
@@ -175,7 +175,7 @@ public class MyClient implements ClientModInitializer {
         }
         if (m == Modules.CPS) return "CPS: " + leftClicks.size() + " | " + rightClicks.size();
         if (m == Modules.PING) return inWorld ? ping(mc) : "Ping: -";
-        if (m == Modules.DIRECTION) return "Kierunek: " + (inWorld ? direction(mc) : "N (polnoc, -Z)");
+        if (m == Modules.DIRECTION) return "Kierunek: " + (inWorld ? direction(mc) : "N (północ, -Z)");
         if (m == Modules.CLOCK) return "Czas: " + LocalTime.now().format(TIME_FORMAT);
         return null;
     }

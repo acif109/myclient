@@ -45,9 +45,9 @@ public class AurixTitleScreen extends Screen {
         entries.clear();
         entries.add(new Entry("Gra jednoosobowa", () -> this.client.setScreen(new SelectWorldScreen(this))));
         entries.add(new Entry("Gra wieloosobowa", () -> this.client.setScreen(new MultiplayerScreen(this))));
-        entries.add(new Entry("Moduly Aurix", () -> this.client.setScreen(new ModuleScreen(this))));
+        entries.add(new Entry("Moduły Aurix", () -> this.client.setScreen(new ModuleScreen(this))));
         entries.add(new Entry("Opcje", () -> this.client.setScreen(new OptionsScreen(this, this.client.options))));
-        entries.add(new Entry("Wyjdz z gry", () -> this.client.scheduleStop()));
+        entries.add(new Entry("Wyjdź z gry", () -> this.client.scheduleStop()));
     }
 
     // ---------- uklad ----------
@@ -77,7 +77,7 @@ public class AurixTitleScreen extends Screen {
     }
 
     private String userLabel(boolean hover) {
-        return "Gracz: " + Profile.displayName(this.client) + (hover ? "  (zmien konto)" : "");
+        return "Gracz: " + Profile.displayName(this.client) + (hover ? "  (zmień konto)" : "");
     }
 
     private boolean userHover(double mx, double my) {
@@ -130,7 +130,7 @@ public class AurixTitleScreen extends Screen {
 
         double t = System.currentTimeMillis() / 1000.0;
         int cx = this.width / 2;
-        int top = logoTop();
+        int top = logoTop() + (int) Math.round(Math.sin(t * 1.5) * 2);
 
         // poswiata logo (pulsuje)
         double pulse = 0.5 + 0.5 * Math.sin(t * 2.0);

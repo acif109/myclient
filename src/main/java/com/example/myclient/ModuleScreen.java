@@ -3,6 +3,7 @@ package com.example.myclient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ public class ModuleScreen extends Screen {
     private static final int CYAN = 0xFF3CE6FF;
     private static final int PURPLE = 0xFFB48CFF;
     private static final int WHITE = 0xFFFFFFFF;
-    private static final int GRAY = 0xFF8A8FB0;
+    private static final int GRAY = 0xFFB4B9D6;
     private static final int GREEN = 0xFF4CFFA0;
     private static final int GOLD = 0xFFFFD34D;
 
@@ -21,7 +22,7 @@ public class ModuleScreen extends Screen {
     private static final String[] CATS = {"Wszystkie", "Informacje", "Wizualne", "Ulubione"};
 
     private static final int SIDE_W = 118;
-    private static final int CARD_H = 34;
+    private static final int CARD_H = 40;
     private static final int GAP = 6;
 
     private final Screen parent;
@@ -103,8 +104,8 @@ public class ModuleScreen extends Screen {
     }
 
     private void computeLayout() {
-        panelW = Math.min(this.width - 24, 600);
-        panelH = Math.min(this.height - 24, 330);
+        panelW = Math.min(this.width - 24, 620);
+        panelH = Math.min(this.height - 24, 340);
         panelX = this.width / 2 - panelW / 2;
         panelY = this.height / 2 - panelH / 2;
         double e = Math.min(1.0, (System.currentTimeMillis() - openedAt) / 180.0);
@@ -117,7 +118,7 @@ public class ModuleScreen extends Screen {
         areaB = panelY + panelH - 12;
 
         int areaW = areaR - areaL;
-        cols = areaW >= 400 ? 3 : (areaW >= 260 ? 2 : 1);
+        cols = areaW >= 300 ? 2 : 1;
         cardW = (areaW - (cols - 1) * GAP) / cols;
 
         favW = 66;
@@ -147,7 +148,7 @@ public class ModuleScreen extends Screen {
     }
 
     private int sideItemY(int i) {
-        return panelY + 96 + i * 22;
+        return panelY + 96 + i * 24;
     }
 
     // ---------- rysowanie ----------
@@ -237,7 +238,7 @@ public class ModuleScreen extends Screen {
                 ex + ew / 2, ey + 6, WHITE);
 
         // gracz
-        if (panelH >= 250) {
+        if (panelH >= 270) {
             String name = Profile.displayName(this.client);
             int fy = panelY + panelH - 36;
             boolean nickHover = inside(mouseX, mouseY, panelX + 12, fy, SIDE_W - 22, 22);
@@ -252,16 +253,16 @@ public class ModuleScreen extends Screen {
 
     private void drawHeader(DrawContext ctx, int mouseX, int mouseY, int shown) {
         int hx = panelX + SIDE_W + 14;
-        String title = (category == 0 ? "Wszystkie moduly" : CATS[category]) + " (" + shown + ")";
-        ctx.drawTextWithShadow(this.textRenderer, title, hx, panelY + 13, WHITE);
-        ctx.drawTextWithShadow(this.textRenderer, "LPM = wlacz/wylacz  |  PPM = ulubione", hx, panelY + 26, GRAY);
+        String title = (category == 0 ? "Wszystkie moduły" : CATS[category]) + " (" + shown + ")";
+        ctx.drawTextWithShadow(this.textRenderer, Text.literal(title).formatted(Formatting.BOLD), hx, panelY + 13, WHITE);
+        ctx.drawTextWithShadow(this.textRenderer, "LPM = włącz/wyłącz  |  PPM = ulubione", hx, panelY + 26, GRAY);
 
         // pole wyszukiwania
         rr(ctx, searchX, searchY, searchW, 18, 5, 0x44FFFFFF);
         rr(ctx, searchX + 1, searchY + 1, searchW - 2, 16, 4, 0xFF10132B);
         boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
         if (query.isEmpty()) {
-            ctx.drawTextWithShadow(this.textRenderer, "Szukaj modulu...", searchX + 6, searchY + 5, GRAY);
+            ctx.drawTextWithShadow(this.textRenderer, "Szukaj modułu...", searchX + 6, searchY + 5, GRAY);
         } else {
             ctx.drawTextWithShadow(this.textRenderer, query + (blink ? "_" : ""), searchX + 6, searchY + 5, WHITE);
         }
@@ -282,7 +283,7 @@ public class ModuleScreen extends Screen {
         ctx.enableScissor(areaL - 2, areaT - 2, areaR + 2, areaB + 2);
 
         if (mods.isEmpty()) {
-            ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("Brak modulow"),
+            ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("Brak modułów"),
                     (areaL + areaR) / 2, areaT + 30, GRAY);
         }
 
@@ -294,37 +295,46 @@ public class ModuleScreen extends Screen {
 
             boolean hover = inside(mouseX, mouseY, x, y, cardW, CARD_H)
                     && mouseY >= areaT && mouseY <= areaB;
+            m.hover += ((hover ? 1f : 0f) - m.hover) * 0.3f;
 
             if (m.enabled) {
-                rr(ctx, x, y, cardW, CARD_H, 5, 0xBB3CE6FF);
-                rr(ctx, x + 1, y + 1, cardW - 2, CARD_H - 2, 4, hover ? 0xFF1B3A58 : 0xFF152840);
+                rr(ctx, x, y, cardW, CARD_H, 5, Gfx.lerpColor(0xAA3CE6FF, 0xFF3CE6FF, m.hover));
+                rr(ctx, x + 1, y + 1, cardW - 2, CARD_H - 2, 4, Gfx.lerpColor(0xFF152840, 0xFF1B3A58, m.hover));
             } else {
-                rr(ctx, x, y, cardW, CARD_H, 5, hover ? 0x44FFFFFF : 0x22FFFFFF);
-                rr(ctx, x + 1, y + 1, cardW - 2, CARD_H - 2, 4, hover ? 0xFF171B3C : 0xFF10132B);
+                rr(ctx, x, y, cardW, CARD_H, 5, Gfx.lerpColor(0x22FFFFFF, 0x55FFFFFF, m.hover));
+                rr(ctx, x + 1, y + 1, cardW - 2, CARD_H - 2, 4, Gfx.lerpColor(0xFF10132B, 0xFF171B3C, m.hover));
             }
 
-            // ikona (pierwsza litera)
-            rr(ctx, x + 6, y + 6, 22, 22, 4, m.enabled ? 0xFF1F4A66 : 0xFF1A1F42);
-            ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal(m.name.substring(0, 1)),
-                    x + 17, y + 13, m.enabled ? CYAN : GRAY);
+            // ikona (pierwsza litera), kolor zalezy od kategorii
+            int tint = m.category.equals(Modules.INFO) ? CYAN : PURPLE;
+            rr(ctx, x + 7, y + 6, 28, 28, 5, m.enabled ? Gfx.lerpColor(0xFF1A2040, tint, 0.35f) : 0xFF1A1F42);
+            ctx.drawCenteredTextWithShadow(this.textRenderer,
+                    Text.literal(m.name.substring(0, 1)).formatted(Formatting.BOLD),
+                    x + 21, y + 16, m.enabled ? WHITE : GRAY);
 
-            // nazwa + kategoria
-            ctx.drawTextWithShadow(this.textRenderer, m.name, x + 34, y + 7, WHITE);
+            // nazwa (pogrubiona) i opis
+            Text nameText = Text.literal(m.name).formatted(Formatting.BOLD);
+            ctx.drawTextWithShadow(this.textRenderer, nameText, x + 44, y + 9, WHITE);
             if (m.favorite) {
                 ctx.drawTextWithShadow(this.textRenderer, "*",
-                        x + 34 + this.textRenderer.getWidth(m.name) + 4, y + 7, GOLD);
+                        x + 44 + this.textRenderer.getWidth(nameText) + 4, y + 9, GOLD);
             }
-            ctx.drawTextWithShadow(this.textRenderer, m.category, x + 34, y + 19,
-                    m.category.equals(Modules.INFO) ? CYAN : PURPLE);
+            ctx.drawTextWithShadow(this.textRenderer, m.desc, x + 44, y + 23, GRAY);
 
             // przelacznik
-            int sx = x + cardW - 32;
-            int sy = y + CARD_H / 2 - 6;
+            int sx = x + cardW - 38;
+            int sy = y + CARD_H / 2 - 7;
             if (m.anim < 0) m.anim = m.enabled ? 1f : 0f;
             m.anim += ((m.enabled ? 1f : 0f) - m.anim) * 0.3f;
-            rr(ctx, sx, sy, 24, 12, 5, Gfx.lerpColor(0xFF3A3F66, GREEN, m.anim));
-            int kx = sx + 2 + Math.round(12 * m.anim);
-            rr(ctx, kx, sy + 2, 8, 8, 3, WHITE);
+            rr(ctx, sx, sy, 30, 14, 6, Gfx.lerpColor(0xFF3A3F66, GREEN, m.anim));
+            int kx = sx + 2 + Math.round(16 * m.anim);
+            rr(ctx, kx, sy + 2, 10, 10, 4, WHITE);
+
+            // napis stanu obok przelacznika
+            String state = m.enabled ? "WŁ." : "WYŁ.";
+            ctx.drawTextWithShadow(this.textRenderer, state,
+                    sx - this.textRenderer.getWidth(state) - 6, y + CARD_H / 2 - 4,
+                    m.enabled ? GREEN : GRAY);
         }
 
         ctx.disableScissor();
@@ -348,7 +358,7 @@ public class ModuleScreen extends Screen {
         computeLayout();
 
         // blok gracza -> zmiana nicku
-        if (button == 0 && panelH >= 250
+        if (button == 0 && panelH >= 270
                 && inside(mouseX, mouseY, panelX + 12, panelY + panelH - 36, SIDE_W - 22, 22)) {
             this.client.setScreen(new AccountScreen(this));
             return true;
