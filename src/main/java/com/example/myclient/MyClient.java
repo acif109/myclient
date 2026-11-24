@@ -24,15 +24,15 @@ import org.lwjgl.glfw.GLFW;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 
 public class MyClient implements ClientModInitializer {
     private static KeyBinding menuKey;
+    private static KeyBinding hudEditorKey;
     private static KeyBinding zoomKey;
 
     // zoom
+    private static boolean startupApplied = false;
     private static boolean zooming = false;
     private static int savedFov = 70;
     private static final int ZOOM_FOV = 30;
@@ -44,6 +44,13 @@ public class MyClient implements ClientModInitializer {
     private static boolean lastRight = false;
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+    // rozmiary elementow HUD (w pikselach ekranu skalowanego)
+    public static final int ARMOR_W = 16;
+    public static final int ARMOR_H = 70;
+    public static final int KEYS_W = 58;
+    public static final int KEYS_H = 38;
+    public static final int TEXT_H = 15;
 
     @Override
     public void onInitializeClient() {
@@ -64,6 +71,12 @@ public class MyClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_RIGHT_SHIFT,
                 "category.myclient"
         ));
+        hudEditorKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.myclient.hud_editor",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_RIGHT_CONTROL,
+                "category.myclient"
+        ));
         zoomKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.myclient.zoom",
                 InputUtil.Type.KEYSYM,
@@ -72,6 +85,14 @@ public class MyClient implements ClientModInitializer {
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // przywrocenie ostatnio uzywanego konta offline po starcie gry
+            if (!startupApplied) {
+                startupApplied = true;
+                if (!Profile.active.isEmpty()) {
+                    Profile.applyOffline(client, Profile.active);
+                }
+            }
+
             // podmiana oryginalnego menu glownego na menu Aurix
             if (client.currentScreen != null && client.currentScreen.getClass() == TitleScreen.class) {
                 client.setScreen(new AurixTitleScreen());
@@ -80,6 +101,11 @@ public class MyClient implements ClientModInitializer {
             while (menuKey.wasPressed()) {
                 if (client.currentScreen == null) {
                     client.setScreen(new ModuleScreen());
+                }
+            }
+            while (hudEditorKey.wasPressed()) {
+                if (client.currentScreen == null) {
+                    client.setScreen(new HudEditorScreen(null));
                 }
             }
 
@@ -136,56 +162,90 @@ public class MyClient implements ClientModInitializer {
         return "Ping: " + entry.getLatency() + " ms";
     }
 
+    // ---------- HUD: tresc, rozmiar, rysowanie ----------
+
+    /** Tekst modulu tekstowego albo null, jesli modul rysuje cos innego. */
+    public static String hudText(MinecraftClient mc, Module m) {
+        boolean inWorld = mc.player != null;
+        if (m == Modules.FPS) return "FPS: " + mc.getCurrentFps();
+        if (m == Modules.COORDS) {
+            return inWorld
+                    ? String.format("XYZ: %.1f / %.1f / %.1f", mc.player.getX(), mc.player.getY(), mc.player.getZ())
+                    : "XYZ: 0.0 / 64.0 / 0.0";
+        }
+        if (m == Modules.CPS) return "CPS: " + leftClicks.size() + " | " + rightClicks.size();
+        if (m == Modules.PING) return inWorld ? ping(mc) : "Ping: -";
+        if (m == Modules.DIRECTION) return "Kierunek: " + (inWorld ? direction(mc) : "N (polnoc, -Z)");
+        if (m == Modules.CLOCK) return "Czas: " + LocalTime.now().format(TIME_FORMAT);
+        return null;
+    }
+
+    public static int hudWidth(MinecraftClient mc, Module m) {
+        if (m == Modules.ARMOR) return ARMOR_W;
+        if (m == Modules.KEYSTROKES) return KEYS_W;
+        String text = hudText(mc, m);
+        return text == null ? 0 : mc.textRenderer.getWidth(text) + 10;
+    }
+
+    public static int hudHeight(Module m) {
+        if (m == Modules.ARMOR) return ARMOR_H;
+        if (m == Modules.KEYSTROKES) return KEYS_H;
+        return TEXT_H;
+    }
+
+    /** Rysuje jeden modul HUD w podanym miejscu. preview = tryb edytora (pokazuje puste pola). */
+    public static void drawHud(DrawContext ctx, MinecraftClient mc, Module m, int x, int y, boolean preview) {
+        if (m == Modules.ARMOR) {
+            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+            for (int i = 0; i < slots.length; i++) {
+                int sy = y + i * 18;
+                ItemStack stack = mc.player != null ? mc.player.getEquippedStack(slots[i]) : ItemStack.EMPTY;
+                if (!stack.isEmpty()) {
+                    Gfx.rr(ctx, x - 2, sy - 2, 20, 20, 3, 0x88101430);
+                    ctx.drawItem(stack, x, sy);
+                    ctx.drawStackOverlay(mc.textRenderer, stack, x, sy);
+                } else if (preview) {
+                    Gfx.rr(ctx, x - 2, sy - 2, 20, 20, 3, 0x44FFFFFF);
+                }
+            }
+        } else if (m == Modules.KEYSTROKES) {
+            drawKey(ctx, mc, "W", x + 20, y, mc.options.forwardKey.isPressed());
+            drawKey(ctx, mc, "A", x, y + 20, mc.options.leftKey.isPressed());
+            drawKey(ctx, mc, "S", x + 20, y + 20, mc.options.backKey.isPressed());
+            drawKey(ctx, mc, "D", x + 40, y + 20, mc.options.rightKey.isPressed());
+        } else {
+            String text = hudText(mc, m);
+            if (text != null) {
+                int w = mc.textRenderer.getWidth(text) + 10;
+                Gfx.rr(ctx, x, y, w, TEXT_H, 3, 0x99101430);
+                ctx.fill(x, y + 3, x + 2, y + TEXT_H - 3, 0xFF3CE6FF);
+                ctx.drawTextWithShadow(mc.textRenderer, text, x + 6, y + 4, 0xFFFFFFFF);
+            }
+        }
+    }
+
+    private static void drawKey(DrawContext ctx, MinecraftClient mc, String label, int x, int y, boolean pressed) {
+        Gfx.rr(ctx, x, y, 18, 18, 3, pressed ? 0xDD3CE6FF : 0x99101430);
+        ctx.drawCenteredTextWithShadow(mc.textRenderer, Text.literal(label), x + 9, y + 5,
+                pressed ? 0xFF0A0D26 : 0xFFFFFFFF);
+    }
+
     private static void renderHud(DrawContext ctx) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.options.hudHidden) return;
 
         pollClicks(mc);
 
-        List<String> lines = new ArrayList<>();
-        if (Modules.FPS.enabled) lines.add("FPS: " + mc.getCurrentFps());
-        if (Modules.COORDS.enabled) {
-            lines.add(String.format("XYZ: %.1f / %.1f / %.1f",
-                    mc.player.getX(), mc.player.getY(), mc.player.getZ()));
-        }
-        if (Modules.CPS.enabled) lines.add("CPS: " + leftClicks.size() + " | " + rightClicks.size());
-        if (Modules.PING.enabled) lines.add(ping(mc));
-        if (Modules.DIRECTION.enabled) lines.add("Kierunek: " + direction(mc));
-        if (Modules.CLOCK.enabled) lines.add("Czas: " + LocalTime.now().format(TIME_FORMAT));
+        int sw = mc.getWindow().getScaledWidth();
+        int sh = mc.getWindow().getScaledHeight();
 
-        int y = 5;
-        for (String line : lines) {
-            ctx.drawTextWithShadow(mc.textRenderer, line, 5, y, 0xFFFFFFFF);
-            y += 12;
+        for (Module m : Modules.ALL) {
+            if (!m.hud || !m.enabled) continue;
+            int w = hudWidth(mc, m);
+            int h = hudHeight(m);
+            int x = Math.max(0, Math.min(m.x, sw - w));
+            int y = Math.max(0, Math.min(m.y, sh - h));
+            drawHud(ctx, mc, m, x, y, false);
         }
-
-        if (Modules.ARMOR.enabled) {
-            y += 3;
-            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
-            for (EquipmentSlot slot : slots) {
-                ItemStack stack = mc.player.getEquippedStack(slot);
-                if (stack.isEmpty()) continue;
-                ctx.drawItem(stack, 5, y);
-                ctx.drawStackOverlay(mc.textRenderer, stack, 5, y);
-                y += 18;
-            }
-        }
-
-        if (Modules.KEYSTROKES.enabled) {
-            int sw = mc.getWindow().getScaledWidth();
-            int sh = mc.getWindow().getScaledHeight();
-            int bx = sw - 3 * 18 - 2 * 2 - 6;
-            int by = sh - 2 * 18 - 2 - 6;
-            drawKey(ctx, mc, "W", bx + 20, by, mc.options.forwardKey.isPressed());
-            drawKey(ctx, mc, "A", bx, by + 20, mc.options.leftKey.isPressed());
-            drawKey(ctx, mc, "S", bx + 20, by + 20, mc.options.backKey.isPressed());
-            drawKey(ctx, mc, "D", bx + 40, by + 20, mc.options.rightKey.isPressed());
-        }
-    }
-
-    private static void drawKey(DrawContext ctx, MinecraftClient mc, String label, int x, int y, boolean pressed) {
-        ctx.fill(x, y, x + 18, y + 18, pressed ? 0xAAFFFFFF : 0x77000000);
-        ctx.drawCenteredTextWithShadow(mc.textRenderer, Text.literal(label), x + 9, y + 5,
-                pressed ? 0xFF000000 : 0xFFFFFFFF);
     }
 }

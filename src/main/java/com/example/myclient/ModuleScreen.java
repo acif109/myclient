@@ -25,6 +25,7 @@ public class ModuleScreen extends Screen {
     private static final int GAP = 6;
 
     private final Screen parent;
+    private final long openedAt = System.currentTimeMillis();
 
     private int category = 0;
     private String query = "";
@@ -106,6 +107,9 @@ public class ModuleScreen extends Screen {
         panelH = Math.min(this.height - 24, 330);
         panelX = this.width / 2 - panelW / 2;
         panelY = this.height / 2 - panelH / 2;
+        double e = Math.min(1.0, (System.currentTimeMillis() - openedAt) / 180.0);
+        e = 1 - (1 - e) * (1 - e);
+        panelY += (int) ((1 - e) * 14);
 
         areaL = panelX + SIDE_W + 14;
         areaR = panelX + panelW - 18;
@@ -136,6 +140,10 @@ public class ModuleScreen extends Screen {
 
     private int cardY(int i) {
         return areaT + (i / cols) * (CARD_H + GAP) - (int) scroll;
+    }
+
+    private int hudButtonY() {
+        return sideItemY(CATS.length) + 4;
     }
 
     private int sideItemY(int i) {
@@ -218,15 +226,27 @@ public class ModuleScreen extends Screen {
                     selected ? CYAN : GRAY);
         }
 
+        // przycisk edytora HUD
+        int ex = panelX + 12;
+        int ey = hudButtonY();
+        int ew = SIDE_W - 22;
+        boolean eh = inside(mouseX, mouseY, ex, ey, ew, 20);
+        rr(ctx, ex, ey, ew, 20, 4, eh ? 0xCC3CE6FF : 0x663CE6FF);
+        rr(ctx, ex + 1, ey + 1, ew - 2, 18, 3, eh ? 0xFF1C3A5A : 0xFF14193A);
+        ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal("Edytor HUD"),
+                ex + ew / 2, ey + 6, WHITE);
+
         // gracz
         if (panelH >= 250) {
-            String name = this.client != null ? this.client.getSession().getUsername() : "Gracz";
+            String name = Profile.displayName(this.client);
             int fy = panelY + panelH - 36;
+            boolean nickHover = inside(mouseX, mouseY, panelX + 12, fy, SIDE_W - 22, 22);
             rr(ctx, panelX + 12, fy, 22, 22, 4, CYAN);
             ctx.drawCenteredTextWithShadow(this.textRenderer,
                     Text.literal(name.substring(0, 1).toUpperCase()), panelX + 23, fy + 7, 0xFF0A0D26);
             ctx.drawTextWithShadow(this.textRenderer, name, panelX + 40, fy + 2, WHITE);
-            ctx.drawTextWithShadow(this.textRenderer, "Aurix 1.0.0", panelX + 40, fy + 13, GRAY);
+            ctx.drawTextWithShadow(this.textRenderer, nickHover ? "Konta / nick" : "Aurix 1.0.0",
+                    panelX + 40, fy + 13, nickHover ? CYAN : GRAY);
         }
     }
 
@@ -300,8 +320,10 @@ public class ModuleScreen extends Screen {
             // przelacznik
             int sx = x + cardW - 32;
             int sy = y + CARD_H / 2 - 6;
-            rr(ctx, sx, sy, 24, 12, 5, m.enabled ? GREEN : 0xFF3A3F66);
-            int kx = m.enabled ? sx + 14 : sx + 2;
+            if (m.anim < 0) m.anim = m.enabled ? 1f : 0f;
+            m.anim += ((m.enabled ? 1f : 0f) - m.anim) * 0.3f;
+            rr(ctx, sx, sy, 24, 12, 5, Gfx.lerpColor(0xFF3A3F66, GREEN, m.anim));
+            int kx = sx + 2 + Math.round(12 * m.anim);
             rr(ctx, kx, sy + 2, 8, 8, 3, WHITE);
         }
 
@@ -324,6 +346,19 @@ public class ModuleScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         computeLayout();
+
+        // blok gracza -> zmiana nicku
+        if (button == 0 && panelH >= 250
+                && inside(mouseX, mouseY, panelX + 12, panelY + panelH - 36, SIDE_W - 22, 22)) {
+            this.client.setScreen(new AccountScreen(this));
+            return true;
+        }
+
+        // przycisk edytora HUD
+        if (button == 0 && inside(mouseX, mouseY, panelX + 12, hudButtonY(), SIDE_W - 22, 20)) {
+            this.client.setScreen(new HudEditorScreen(this));
+            return true;
+        }
 
         // panel boczny
         for (int i = 0; i < CATS.length; i++) {

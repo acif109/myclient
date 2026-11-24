@@ -18,6 +18,16 @@ public final class Config {
         return m.name.toLowerCase().replaceAll("[^a-z0-9]+", "_");
     }
 
+    private static int readInt(Properties props, String k, int fallback) {
+        String v = props.getProperty(k);
+        if (v == null) return fallback;
+        try {
+            return Integer.parseInt(v.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
     public static void load() {
         if (!Files.exists(FILE)) return;
         Properties props = new Properties();
@@ -27,10 +37,25 @@ public final class Config {
             System.err.println("[Aurix] Nie udalo sie wczytac ustawien: " + e.getMessage());
             return;
         }
+        Profile.accounts.clear();
+        String savedAccounts = props.getProperty("accounts", "");
+        for (String part : savedAccounts.split(",")) {
+            String n = part.trim();
+            if (Profile.isValidName(n) && !Profile.accounts.contains(n)) {
+                Profile.accounts.add(n);
+            }
+        }
+        String savedActive = props.getProperty("active", "").trim();
+        Profile.active = Profile.accounts.contains(savedActive) ? savedActive : "";
+        boolean positionsValid = "2".equals(props.getProperty("config_version"));
         for (Module m : Modules.ALL) {
             String value = props.getProperty(key(m));
             if (value != null) {
                 m.enabled = Boolean.parseBoolean(value.trim());
+            }
+            if (m.hud && positionsValid) {
+                m.x = readInt(props, key(m) + "_x", m.defX);
+                m.y = readInt(props, key(m) + "_y", m.defY);
             }
             String fav = props.getProperty(key(m) + "_fav");
             if (fav != null) {
@@ -41,9 +66,16 @@ public final class Config {
 
     public static void save() {
         Properties props = new Properties();
+        props.setProperty("config_version", "2");
+        props.setProperty("accounts", String.join(",", Profile.accounts));
+        props.setProperty("active", Profile.active);
         for (Module m : Modules.ALL) {
             props.setProperty(key(m), Boolean.toString(m.enabled));
             props.setProperty(key(m) + "_fav", Boolean.toString(m.favorite));
+            if (m.hud) {
+                props.setProperty(key(m) + "_x", Integer.toString(m.x));
+                props.setProperty(key(m) + "_y", Integer.toString(m.y));
+            }
         }
         try (Writer writer = Files.newBufferedWriter(FILE)) {
             props.store(writer, "Aurix Client - ustawienia modulow");

@@ -33,6 +33,7 @@ public class AurixTitleScreen extends Screen {
 
     private final List<Entry> entries = new ArrayList<>();
     private long openedAt;
+    private float[] hoverAnim = new float[0];
 
     public AurixTitleScreen() {
         super(Text.literal("Aurix Client"));
@@ -73,6 +74,15 @@ public class AurixTitleScreen extends Screen {
 
     private static boolean inside(double mx, double my, int x, int y, int w, int h) {
         return mx >= x && mx < x + w && my >= y && my < y + h;
+    }
+
+    private String userLabel(boolean hover) {
+        return "Gracz: " + Profile.displayName(this.client) + (hover ? "  (zmien konto)" : "");
+    }
+
+    private boolean userHover(double mx, double my) {
+        int uw = this.textRenderer.getWidth(userLabel(false));
+        return inside(mx, my, this.width - uw - 9, this.height - 16, uw + 9, 14);
     }
 
     // ---------- rysowanie ----------
@@ -135,22 +145,30 @@ public class AurixTitleScreen extends Screen {
                 cx, top + LOGO_H + 17, CYAN);
 
         // przyciski
+        if (hoverAnim.length != entries.size()) {
+            hoverAnim = new float[entries.size()];
+        }
         int bx = buttonX();
         for (int i = 0; i < entries.size(); i++) {
             int by = buttonY(i);
             boolean hover = inside(mouseX, mouseY, bx, by, BTN_W, BTN_H);
-            ctx.fill(bx, by, bx + BTN_W, by + BTN_H, hover ? 0xEE2A7C94 : 0xCC141836);
-            ctx.fill(bx, by, bx + 3, by + BTN_H, hover ? CYAN : 0xFF3A3F66);
-            ctx.fill(bx, by + BTN_H - 1, bx + BTN_W, by + BTN_H, hover ? 0x773CE6FF : 0x22FFFFFF);
+            hoverAnim[i] += ((hover ? 1f : 0f) - hoverAnim[i]) * 0.25f;
+            float hv = hoverAnim[i];
+            int x = bx + Math.round(hv * 4);
+
+            Gfx.rr(ctx, x, by, BTN_W, BTN_H, 4, Gfx.lerpColor(0xCC141836, 0xEE2A7C94, hv));
+            Gfx.rr(ctx, x, by + 3, 3, BTN_H - 6, 1, Gfx.lerpColor(0xFF3A3F66, CYAN, hv));
             ctx.drawCenteredTextWithShadow(this.textRenderer, Text.literal(entries.get(i).label),
-                    cx, by + 6, hover ? WHITE : 0xFFD6D9F0);
+                    cx + Math.round(hv * 4), by + 6, Gfx.lerpColor(0xFFD6D9F0, WHITE, hv));
         }
 
         // stopka
         ctx.drawTextWithShadow(this.textRenderer, "Aurix Client 1.0.0", 5, this.height - 14, GRAY);
-        String user = "Gracz: " + this.client.getSession().getUsername();
+        boolean userHover = userHover(mouseX, mouseY);
+        String user = userLabel(userHover);
         int uw = this.textRenderer.getWidth(user);
-        ctx.drawTextWithShadow(this.textRenderer, user, this.width - uw - 5, this.height - 14, GRAY);
+        ctx.drawTextWithShadow(this.textRenderer, user, this.width - uw - 5, this.height - 14,
+                userHover ? CYAN : GRAY);
 
         // plynne wejscie (fade-in)
         long elapsed = System.currentTimeMillis() - openedAt;
@@ -162,6 +180,10 @@ public class AurixTitleScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0 && userHover(mouseX, mouseY)) {
+            this.client.setScreen(new AccountScreen(this));
+            return true;
+        }
         if (button == 0) {
             int bx = buttonX();
             for (int i = 0; i < entries.size(); i++) {
